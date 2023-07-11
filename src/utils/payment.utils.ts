@@ -14,7 +14,7 @@ export class PaymentUtil {
   static createDepositRequest(transactions: Transaction[]): DepositRequest {
     return new DepositRequest(transactions);
   }
-  
+
   static createWithdrawRequest(transactions: WithdrawTransaction[]) {
     return new WithdrawRequest(transactions);
   }

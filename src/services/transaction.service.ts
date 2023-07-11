@@ -10,7 +10,7 @@ import { Channels } from "src/types/redis.types";
 //4-Переписать на TypeScript другие два сервиса используя в co-frontend очередь для обработки sub.on
 //5-Написать фронтенд часть для этого проекта
 
-class TransactionService extends RedisUtil {
+export class TransactionService extends RedisUtil {
   private api: any;
   private channels: Channels;
 
@@ -22,23 +22,23 @@ class TransactionService extends RedisUtil {
   }
 
   handleTransaction(error: PayPalError, data: any) {
+    const fail = this.channels.error;
+    const success = this.channels.success;
+
     if (error) {
-      const channel = this.channels.error;
-      return this.publish(channel, error);
+      return this.publish(fail, error);
     }
 
     if (data.links) {
       const href = PaymentUtil.getApprovalUrl(data.links);
       const response = { data: { href } };
-      const channel = this.channels.deposit;
-      return this.publish(channel, response);
+      return this.publish(success, response);
     }
 
-    const channel = this.channels.withdraw;
-    return this.publish(channel, data);
+    return this.publish(success, data);
   }
 
-  deposit(message: string) {
+  createDeposit(message: string) {
     const transactions = this.parse(message);
     const request = PaymentUtil.createDepositRequest(transactions);
     this.api.payment.create(request, this.handleTransaction);
