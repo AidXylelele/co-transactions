@@ -1,0 +1,23 @@
+{
+  "name": "co-transactions",
+  "version": "1.0.0",
+  "description": "This repository is part of the project from the internship, which is three integrated services - frontend interaction service, user data service, transaction service.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Vladyslav Shevyrov <warboyka48@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "ioredis": "^5.3.2",
+    "paypal-rest-sdk": "^1.8.1",
+    "typescript": "^3.1.6",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.4.1",
+    "@types/paypal-rest-sdk": "^1.7.6",
+    "typescript": "^5.1.6"
+  }
+}
