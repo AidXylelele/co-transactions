@@ -1,3 +1,4 @@
+import { Link } from "paypal-rest-sdk";
 import {
   DepositRequest,
   Transaction,
@@ -5,12 +6,16 @@ import {
   WithdrawTransaction,
 } from "src/types/paypal.types";
 
-export class PaymentUtils {
-  
-  static createDeposit(transactions: Transaction[]): DepositRequest {
+export class PaymentUtil {
+  static getApprovalUrl(links: Link[]): string | undefined {
+    return links.find((link: Link) => link.rel === "approval_url")?.href;
+  }
+
+  static createDepositRequest(transactions: Transaction[]): DepositRequest {
     return new DepositRequest(transactions);
   }
-  static createWithdraw(transactions: WithdrawTransaction[]) {
+  
+  static createWithdrawRequest(transactions: WithdrawTransaction[]) {
     return new WithdrawRequest(transactions);
   }
 }
