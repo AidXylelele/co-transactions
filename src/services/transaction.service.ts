@@ -1,52 +1,32 @@
 import { RedisUtil } from "src/utils/redis.utils";
-import paypal, { PayPalError } from "paypal-rest-sdk";
-import { PaymentUtil } from "src/utils/payment.utils";
 import { channels } from "src/consts/channels.const";
 import { Channels } from "src/types/redis.types";
+import { PayPalUtils } from "src/utils/payment.utils";
 
-//Все данные запаковывать в объект в поле data!!!
+//Refactore and make the best structure of this service;
+//Split all paypal.types
+//Refactor redis.utils
+//It is required to make something with subscriber in index!
 
-// Реализовать добавление данных в запись пользователя в бд(обновление транзакций, увелечение/уменьшение счета)
-// Переписать TransactionService, RedisUtil
-
-export class TransactionService extends RedisUtil {
+export class TransactionService {
   private api: any;
   private channels: Channels;
+  private redis: RedisUtil;
+  private paypal: PayPalUtils;
 
   constructor(client: any) {
-    super(client);
-    this.api = paypal;
-    this.client = client;
     this.channels = channels;
-  }
-
-  handleTransaction(error: PayPalError, data: any) {
-    const { deposit, transaction, withdraw } = this.channels;
-
-    if (error) {
-      return this.publish(transaction.error, error);
-    }
-
-    if (data.links) {
-      const href = PaymentUtil.getApprovalUrl(data.links);
-      const response = { data: { href } };
-      return this.publish(deposit.approve, response);
-    }
-
-    return this.publish(withdraw.create, data);
+    this.redis = new RedisUtil(client);
+    this.paypal = new PayPalUtils();
   }
 
   async createDeposit(message: string) {
-    const { transactions, email } = this.parse(message);
-    const request = PaymentUtil.createDepositRequest(transactions);
-    this.api.payment.create(request, this.handleTransaction);
-    await this.update(email, transactions);
-  }
-
-  createWithdraw(message: string) {}
-
-  executeDeposit(message: string) {
-    const { payerId, email, paymentId } = this.parse(message);
-    this.api.payment.execute(paymentId, { payer_id: payerId });
+    const { email, transactions } = this.redis.parse(message);
+    const request = this.paypal.createDepositRequest(transactions);
+    const payment = await this.paypal.createPayment(request);
+    const href = this.paypal.getApprovalUrl(payment);
+    const response = { data: { href } };
+    this.redis.publish(this.channels.deposit.approve, response);
+    // Important:: save the transaction in redis (Use que for the user transactions!)
   }
 }

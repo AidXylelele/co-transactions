@@ -7,30 +7,20 @@ import { TransactionService } from "./services/transaction.service";
 const client = new Redis(config);
 const subscriber = new Redis(config);
 
-subscriber.subscribe(channels.deposit);
-
 const transactionService = new TransactionService(client);
 
+subscriber.subscribe(channels.deposit.create);
+subscriber.subscribe(channels.deposit.approve);
+subscriber.subscribe(channels.deposit.execute);
+
 subscriber.on("message", async (channel: string, message: string) => {
-  const { deposit } = channels;
-  if (channel === deposit.create) {
-    return transactionService.createDeposit(message);
+  if (channel === channels.deposit.create) {
+    await transactionService.createDeposit(message);
   }
 
-  if (channel === deposit.execute) {
+  if (channel === channels.deposit.execute) {
+    transactionService.executeDeposit(message);
   }
 });
 
-subscriber.subscribe(channels.withdraw);
-
-subscriber.on("message", async (channel: string, message: string) => {
-  if (channel === channels.withdraw.create) {
-  }
-});
-
-subscriber.subscribe(channels.success);
-
-subscriber.on("message", async (channel: string, message: string) => {
-  if (channel === channels.balance.check) {
-  }
-});
+subscriber.subscribe(channels.withdraw.create);

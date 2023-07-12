@@ -9,19 +9,18 @@ import {
 
 export class PayPalUtils {
   private api: any;
-  
+
   constructor() {
     this.api = paypal;
   }
 
-  createPayment(request: DepositRequest | WithdrawRequest): Promise<any> {
+  createPayment(request: DepositRequest): Promise<any> {
     return new Promise((resolve, reject) => {
       this.api.payment.create(request, (error: PayPalError, payment: any) => {
         if (error) {
           reject(error);
-        } else {
-          resolve(payment);
         }
+        resolve(payment);
       });
     });
   }
@@ -29,13 +28,16 @@ export class PayPalUtils {
   executePayment(data: ExecutionData): Promise<any> {
     const { payer_id, paymentId } = data;
     return new Promise((resolve, reject) => {
-      this.api.payment.execute(paymentId, { payer_id }, (error: PayPalError, payment: any) => {
-        if (error) {
-          reject(error);
-        } else {
+      this.api.payment.execute(
+        paymentId,
+        { payer_id },
+        (error: PayPalError, payment: any) => {
+          if (error) {
+            reject(error);
+          }
           resolve(payment);
         }
-      });
+      );
     });
   }
 
