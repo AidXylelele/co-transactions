@@ -12,14 +12,25 @@ subscriber.subscribe(channels.deposit);
 const transactionService = new TransactionService(client);
 
 subscriber.on("message", async (channel: string, message: string) => {
-  if (channel === channels.deposit) {
-    transactionService.createDeposit(message);
+  const { deposit } = channels;
+  if (channel === deposit.create) {
+    return transactionService.createDeposit(message);
+  }
+
+  if (channel === deposit.execute) {
   }
 });
 
 subscriber.subscribe(channels.withdraw);
 
 subscriber.on("message", async (channel: string, message: string) => {
-  if (channel === channels.withdraw) {
+  if (channel === channels.withdraw.create) {
+  }
+});
+
+subscriber.subscribe(channels.success);
+
+subscriber.on("message", async (channel: string, message: string) => {
+  if (channel === channels.balance.check) {
   }
 });

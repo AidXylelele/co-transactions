@@ -7,5 +7,7 @@ export type RedisConfig = {
 };
 
 export type Channels = {
-  [key: string]: string;
+  [key: string]: {
+    [key: string]: string;
+  };
 };

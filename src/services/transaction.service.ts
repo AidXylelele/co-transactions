@@ -4,11 +4,10 @@ import { PaymentUtil } from "src/utils/payment.utils";
 import { channels } from "src/consts/channels.const";
 import { Channels } from "src/types/redis.types";
 
-//2-Дописать и исправить код PaymentUtils(изменить названия методов, так как фактически тут просто
-// создается информация о транзакции)
-//3-Дописать функционал для сохранения переводов в базе данных и правильно реализовать переводы (вызов платежа и тд)
-//4-Переписать на TypeScript другие два сервиса используя в co-frontend очередь для обработки sub.on
-//5-Написать фронтенд часть для этого проекта
+//Все данные запаковывать в объект в поле data!!!
+
+// Реализовать добавление данных в запись пользователя в бд(обновление транзакций, увелечение/уменьшение счета)
+// Переписать TransactionService, RedisUtil
 
 export class TransactionService extends RedisUtil {
   private api: any;
@@ -22,27 +21,32 @@ export class TransactionService extends RedisUtil {
   }
 
   handleTransaction(error: PayPalError, data: any) {
-    const fail = this.channels.error;
-    const success = this.channels.success;
+    const { deposit, transaction, withdraw } = this.channels;
 
     if (error) {
-      return this.publish(fail, error);
+      return this.publish(transaction.error, error);
     }
 
     if (data.links) {
       const href = PaymentUtil.getApprovalUrl(data.links);
       const response = { data: { href } };
-      return this.publish(success, response);
+      return this.publish(deposit.approve, response);
     }
 
-    return this.publish(success, data);
+    return this.publish(withdraw.create, data);
   }
 
-  createDeposit(message: string) {
-    const transactions = this.parse(message);
+  async createDeposit(message: string) {
+    const { transactions, email } = this.parse(message);
     const request = PaymentUtil.createDepositRequest(transactions);
     this.api.payment.create(request, this.handleTransaction);
+    await this.update(email, transactions);
   }
 
-  withdraw(message: string) {}
+  createWithdraw(message: string) {}
+
+  executeDeposit(message: string) {
+    const { payerId, email, paymentId } = this.parse(message);
+    this.api.payment.execute(paymentId, { payer_id: payerId });
+  }
 }

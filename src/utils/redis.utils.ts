@@ -1,3 +1,5 @@
+import { Transaction, WithdrawTransaction } from "src/types/paypal.types";
+
 export class RedisUtil {
   constructor(public client: any) {
     this.client = client;
@@ -7,16 +9,22 @@ export class RedisUtil {
     return await this.client.get(email);
   }
 
-  async save(email: string, data: any) {
-    const stringifiedData = this.stringify(data);
-    await this.client.set(email, stringifiedData);
+  async set(email: string, input: string) {
+    return await this.client.set(email, input);
+  }
+
+  async update(email: string, input: Transaction[] | WithdrawTransaction[]) {
+    const data = await this.get(email).then(this.parse);
+    data.transactions = data.transactions.concat(input);
+    const updatedData = this.stringify(data);
+    return await this.set(email, updatedData);
   }
 
   stringify(message: any) {
     return JSON.stringify(message);
   }
 
-  parse(message: string) {
+  parse(message: string): any {
     return JSON.parse(message);
   }
 

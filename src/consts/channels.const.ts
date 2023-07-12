@@ -1,9 +1,18 @@
 import { Channels } from "src/types/redis.types";
 
 export const channels: Channels = {
-  deposit: "deposit:create",
-  withdraw: "withdraw:create",
-  error: "transaction:error",
-  success: "transaction:success",
-  cancel: "transaction:cancel",
+  deposit: {
+    create: "deposit:create",
+    approve: "deposit:approve",
+    execute: "deposit:execute",
+  },
+  withdraw: {
+    create: "withdraw:create",
+  },
+  balance: {
+    check: "balance:check",
+  },
+  transaction: {
+    error: "transaction:error"
+  }
 };
