@@ -1,21 +1,53 @@
-import { Link } from "paypal-rest-sdk";
+import paypal, { Link, PayPalError } from "paypal-rest-sdk";
 import {
   DepositRequest,
+  ExecutionData,
   Transaction,
   WithdrawRequest,
   WithdrawTransaction,
 } from "src/types/paypal.types";
 
-export class PaymentUtil {
-  static getApprovalUrl(links: Link[]): string | undefined {
-    return links.find((link: Link) => link.rel === "approval_url")?.href;
+export class PayPalUtils {
+  private api: any;
+  
+  constructor() {
+    this.api = paypal;
   }
 
-  static createDepositRequest(transactions: Transaction[]): DepositRequest {
+  createPayment(request: DepositRequest | WithdrawRequest): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.api.payment.create(request, (error: PayPalError, payment: any) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(payment);
+        }
+      });
+    });
+  }
+
+  executePayment(data: ExecutionData): Promise<any> {
+    const { payer_id, paymentId } = data;
+    return new Promise((resolve, reject) => {
+      this.api.payment.execute(paymentId, { payer_id }, (error: PayPalError, payment: any) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(payment);
+        }
+      });
+    });
+  }
+
+  createDepositRequest(transactions: Transaction[]): DepositRequest {
     return new DepositRequest(transactions);
   }
 
-  static createWithdrawRequest(transactions: WithdrawTransaction[]) {
+  createWithdrawRequest(transactions: WithdrawTransaction[]): WithdrawRequest {
     return new WithdrawRequest(transactions);
+  }
+
+  getApprovalUrl(links: Link[]): string | undefined {
+    return links.find((link: Link) => link.rel === "approval_url")?.href;
   }
 }
