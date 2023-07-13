@@ -25,6 +25,17 @@ export class PayPalUtils {
     });
   }
 
+  createPayout(request: WithdrawRequest): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.api.payout.create(request, (error: PayPalError, payout: any) => {
+        if (error) {
+          reject(error);
+        }
+        resolve(payout);
+      });
+    });
+  }
+
   executePayment(data: ExecutionData): Promise<any> {
     const { payer_id, paymentId } = data;
     return new Promise((resolve, reject) => {
