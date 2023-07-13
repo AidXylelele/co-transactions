@@ -1,4 +1,3 @@
-
 export class RedisUtil {
   constructor(public client: any) {
     this.client = client;
@@ -11,6 +10,18 @@ export class RedisUtil {
   async set(email: string, input: any) {
     const stringifiedInput = this.stringify(input);
     return await this.client.set(email, stringifiedInput);
+  }
+
+  async getAll() {
+    const allData: Promise<any>[] = [];
+    await this.client.keys("*", (error: Error, keys: string[]) => {
+      if (error) return console.log(error);
+
+      keys.forEach((key: string) => {
+        allData.push(this.get(key));
+      });
+    });
+    return await Promise.all(allData);
   }
 
   async update(email: string, update: any) {
