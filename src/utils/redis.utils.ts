@@ -1,6 +1,9 @@
 export class RedisUtil {
+  private pattern: string;
+
   constructor(public client: any) {
     this.client = client;
+    this.pattern = "*";
   }
 
   async get(email: string) {
@@ -14,7 +17,7 @@ export class RedisUtil {
 
   async getAll() {
     const allData: Promise<any>[] = [];
-    await this.client.keys("*", (error: Error, keys: string[]) => {
+    await this.client.keys(this.pattern, (error: Error, keys: string[]) => {
       if (error) return console.log(error);
 
       keys.forEach((key: string) => {
