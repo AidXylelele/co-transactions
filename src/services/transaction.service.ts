@@ -2,7 +2,7 @@ import { RedisUtil } from "src/utils/redis.utils";
 import { channels } from "src/consts/channels.const";
 import { Channels } from "src/types/redis.types";
 import { TransactionManager } from "src/utils/transaction.utils";
-import transactionManager from "paypal-rest-sdk";
+import paypal from "paypal-rest-sdk";
 
 export class TransactionService {
   private channels: Channels;
@@ -12,7 +12,7 @@ export class TransactionService {
   constructor(client: any) {
     this.channels = channels;
     this.redis = new RedisUtil(client);
-    this.transactionManager = new TransactionManager(transactionManager);
+    this.transactionManager = new TransactionManager(paypal);
   }
 
   async createDeposit(message: string) {
