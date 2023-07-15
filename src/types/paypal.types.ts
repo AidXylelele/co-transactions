@@ -4,6 +4,12 @@ export type PayPalConfig = {
   client_secret: string;
 };
 
+export type TransactionStates = {
+  success: string[];
+  error: string[];
+};
+
+
 export type ExecutionData = {
   payer_id: string;
   paymentId: string;

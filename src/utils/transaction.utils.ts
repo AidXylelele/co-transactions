@@ -1,8 +1,10 @@
 import { Link, PayPalError } from "paypal-rest-sdk";
+import { transactionStates } from "src/consts/transaction.const";
 import {
   DepositRequest,
   ExecutionData,
   Transaction,
+  TransactionStates,
   WithdrawRequest,
   WithdrawTransaction,
 } from "src/types/paypal.types";
@@ -51,37 +53,62 @@ class TransactionEntity {
 }
 
 export class TransactionManager extends TransactionEntity {
+  public successfulStates: string[];
+  private states: TransactionStates;
+
   constructor(api: any) {
     super(api);
+    this.states = transactionStates;
   }
 
   getApprovalUrl(links: Link[]): string | undefined {
     return links.find((link: Link) => link.rel === "approval_url")?.href;
   }
 
-  getTransactionStatus(type: string, id: string) {
-    return promisify(this.api[type].get, id);
+  async getStates(transactions: any[]) {
+    const result = [];
+    for (const item of transactions) {
+      const { type, id } = this.extractDetails(item);
+      result.push(promisify(this.api[type].get, id));
+    }
+    return await Promise.all(result);
   }
 
-  async processTransaction(transaction: any) {
-    const { transactionType, transactionId } =
-      this.extractTransactionDetails(transaction);
-    await this.getTransactionStatus(transactionType, transactionId);
+  manageStates(transactions: any[]) {
+    const resolved = [];
+    const rejected = [];
+    const pending = [];
+
+    for (const item of transactions) {
+      const { state } = this.extractDetails(item);
+      if (this.states.success.includes(state)) {
+        resolved.push(item);
+      }
+
+      if (this.states.error.includes(state)) {
+        rejected.push(state);
+      }
+
+      pending.push(item);
+    }
+    return { resolved, rejected, pending };
   }
 
-  extractTransactionDetails(transaction: any) {
+  extractDetails(transaction: any) {
     const hasId = Object(transaction).hasOwnProperty("id");
 
     if (hasId) {
       return {
-        transactionType: "payment",
-        transactionId: transaction.id,
+        type: "payment",
+        id: transaction.id,
+        state: transaction.state,
       };
     }
 
     return {
-      transactionType: "payout",
-      transactionId: transaction.batch_header?.payout_batch_id,
+      type: "payout",
+      id: transaction.batch_header?.payout_batch_id,
+      state: transaction.batch_header.batch_status,
     };
   }
 }

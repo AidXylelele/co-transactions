@@ -22,7 +22,7 @@ export class TransactionService {
     const href = this.transactionManager.getApprovalUrl(payment);
     const response = { data: { href } };
     this.redis.publish(this.channels.deposit.approve, response);
-    await this.redis.update(email, { pendingTransactions: [payment] });
+    await this.redis.update(email, { pending: [payment] });
   }
 
   async createWithdraw(message: string) {
@@ -30,16 +30,20 @@ export class TransactionService {
     const request = this.transactionManager.createWithdrawRequest(transactions);
     const payout = await this.transactionManager.createPayout(request);
     this.redis.publish(this.channels.withdraw.create, payout);
-    await this.redis.update(email, { pendingTransactions: [payout] });
+    await this.redis.update(email, { pending: [payout] });
   }
 
   async checkTransactions() {
-    const users = await this.redis.getAll();
-    for (const user of users) {
-      const transactions = user.pendingTransactions;
-      await Promise.all(
-        transactions.map(this.transactionManager.processTransaction)
-      );
+    const accounts = await this.redis.getAll();
+    for (const email in accounts) {
+      const user = accounts[email];
+      const updated = await this.transactionManager.getStates(user.pending);
+      const sortedTransactions = this.transactionManager.manageStates(updated);
+      const { resolved, rejected, pending } = sortedTransactions;
+      user.pending = pending;
+      await this.redis.set(email, user);
+      await this.redis.update(email, { resolved });
+      await this.redis.update(email, { rejected });
     }
   }
 }
