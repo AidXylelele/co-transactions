@@ -1,13 +1,7 @@
 import Queue from "better-queue";
 import { Worker } from "node:worker_threads";
 import { WORKER_PATH } from "src/consts/balance.const";
-import { BalanceService } from "src/services/balance.service";
-import { TransactionService } from "src/services/transaction.service";
-
-type WorkerData = {
-  transactionService: TransactionService;
-  balanceService: BalanceService;
-};
+import { WorkerData } from "src/types/worker.types";
 
 export const balanceWorkerQueue = new Queue(
   (workerData: WorkerData, cb: any) => {
@@ -18,4 +12,3 @@ export const balanceWorkerQueue = new Queue(
     });
   }
 );
-

@@ -38,7 +38,7 @@ export class TransactionService {
     await this.redis.update(email, { pending: [payout] });
   }
 
-  async check(cb: (arg: any[]) => Promise<any>) {
+  async check(cb: any) {
     const accounts = await this.redis.getAll();
     for (const email in accounts) {
       const user = accounts[email];
