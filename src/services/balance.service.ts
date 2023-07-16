@@ -5,6 +5,7 @@ import paypal from "paypal-rest-sdk";
 export class BalanceService {
   public redis: any;
   public transactionManager: TransactionManager;
+  
   constructor(client: any) {
     this.redis = new RedisUtil(client);
     this.transactionManager = new TransactionManager(paypal);

@@ -9,14 +9,18 @@
   "author": "Vladyslav Shevyrov <warboyka48@gmail.com>",
   "license": "ISC",
   "dependencies": {
+    "better-queue": "^3.8.12",
     "dotenv": "^16.3.1",
     "ioredis": "^5.3.2",
+    "node-cron": "^3.0.2",
     "paypal-rest-sdk": "^1.8.1",
     "typescript": "^3.1.6",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@types/better-queue": "^3.8.3",
     "@types/node": "^20.4.1",
+    "@types/node-cron": "^3.0.8",
     "@types/paypal-rest-sdk": "^1.7.6",
     "typescript": "^5.1.6"
   }

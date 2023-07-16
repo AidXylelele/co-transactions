@@ -25,6 +25,11 @@ export class TransactionService {
     await this.redis.update(email, { pending: [payment] });
   }
 
+  async executeDeposit(message: string) {
+    const data = this.redis.parse(message);
+    return await this.transactionManager.executePayment(data);
+  }
+
   async createWithdraw(message: string) {
     const { email, transactions } = this.redis.parse(message);
     const request = this.transactionManager.createWithdrawRequest(transactions);
@@ -33,7 +38,7 @@ export class TransactionService {
     await this.redis.update(email, { pending: [payout] });
   }
 
-  async checkTransactions() {
+  async check(cb: (arg: any[]) => Promise<any>) {
     const accounts = await this.redis.getAll();
     for (const email in accounts) {
       const user = accounts[email];
@@ -44,6 +49,7 @@ export class TransactionService {
       await this.redis.set(email, user);
       await this.redis.update(email, { resolved });
       await this.redis.update(email, { rejected });
+      await cb(resolved);
     }
   }
 }

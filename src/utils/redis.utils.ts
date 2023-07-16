@@ -35,18 +35,18 @@ export class RedisUtil {
     return await this.client.set(email, stringifiedInput);
   }
 
-  async update(email: string, update: any) {
-    const userData = await this.get(email);
-    Object.keys(update).forEach((key) => {
-      if (userData.hasOwnProperty(key)) {
-        if (Array.isArray(userData[key])) {
-          userData[key] = userData[key].concat(update[key]);
+  async update(email: string, data: any) {
+    const user = await this.get(email);
+    Object.keys(data).forEach((key) => {
+      if (user.hasOwnProperty(key)) {
+        if (Array.isArray(user[key])) {
+          user[key] = user[key].concat(data[key]);
         } else {
-          userData[key] = update[key];
+          user[key] = data[key];
         }
       }
     });
-    return await this.set(email, userData);
+    return await this.set(email, user);
   }
 
   stringify(message: any) {
