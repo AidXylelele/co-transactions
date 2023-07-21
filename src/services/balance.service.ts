@@ -1,39 +1,40 @@
+import { Redis } from "ioredis";
 import { RedisUtil } from "src/utils/redis.utils";
-import { TransactionManager } from "src/utils/transaction.utils";
-import paypal from "paypal-rest-sdk";
+import { TransactionUtil } from "src/utils/transaction.utils";
 
 export class BalanceService {
-  public redis: any;
-  public transactionManager: TransactionManager;
-  
-  constructor(client: any) {
-    this.redis = new RedisUtil(client);
-    this.transactionManager = new TransactionManager(paypal);
+  private redis: RedisUtil;
+  private util: TransactionUtil;
+
+  constructor(sub: Redis, pub: Redis, pool: Redis) {
+    this.util = new TransactionUtil();
+    this.redis = new RedisUtil(sub, pub, pool);
   }
 
   async get(email: string) {
-    const { balance } = await this.redis.get(email);
-    return balance;
+    const user = await this.redis.get(email);
+    return user.balance;
   }
 
-  async update(email: string, transfers: any[]) {
-    const updations = [];
+  async update(email: string) {
     const user = await this.redis.get(email);
+    const transactions = user.resolved;
     let balance = user.balance;
 
-    for (const transfer of transfers) {
-      const { type } = this.transactionManager.extractDetails(transfer);
+    for (const item of transactions) {
+      const { type } = this.util.extractDetails(item);
 
       if (type === "payment") {
-        const { total } = transfer.transactions[0].amount;
+        const { total } = item.transactions[0].amount;
         balance += Number(total);
-      } else {
-        const { value } = transfer.items[0].amount;
-        balance -= Number(value);
       }
-      updations.push(this.redis.update(email, { balance }));
+
+      if (type === "payout") {
+        const { value } = item.items[0].amount;
+        balance += Number(value);
+      }
     }
 
-    return await Promise.all(updations);
+    await this.redis.update(email, { balance });
   }
 }

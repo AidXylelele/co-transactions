@@ -1,63 +1,20 @@
-import { Link, PayPalError } from "paypal-rest-sdk";
+import { Link } from "paypal-rest-sdk";
 import { transactionStates } from "src/consts/transaction.const";
+import { RequestUtil } from "./request.util";
 import {
-  DepositRequest,
-  ExecutionData,
-  Transaction,
+  DepositDetails,
+  PaymentInstance,
+  PayoutInstance,
   TransactionStates,
-  WithdrawRequest,
-  WithdrawTransaction,
+  WithdrawDetails,
 } from "src/types/paypal.types";
 
-const promisify = (fn: any, request: any): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    fn(request, (error: PayPalError, response: any) => {
-      if (error) {
-        reject(error);
-      }
-      resolve(response);
-    });
-  });
-};
-
-class TransactionEntity {
-  public api: any;
-
-  constructor(api: any) {
-    this.api = api;
-  }
-
-  createDepositRequest(transactions: Transaction[]): DepositRequest {
-    return new DepositRequest(transactions);
-  }
-
-  createWithdrawRequest(transactions: WithdrawTransaction[]): WithdrawRequest {
-    return new WithdrawRequest(transactions);
-  }
-
-  createPayment(request: DepositRequest): Promise<any> {
-    const callback = this.api.payment.create;
-    return promisify(callback, request);
-  }
-
-  createPayout(request: WithdrawRequest): Promise<any> {
-    const callback = this.api.payout.create;
-    return promisify(callback, request);
-  }
-
-  executePayment(data: ExecutionData): Promise<any> {
-    const { payer_id, paymentId } = data;
-    const callback = this.api.payment.execute;
-    return promisify(callback, { paymentId, payer_id });
-  }
-}
-
-export class TransactionManager extends TransactionEntity {
+export class TransactionUtil extends RequestUtil {
   public successfulStates: string[];
   private states: TransactionStates;
 
-  constructor(api: any) {
-    super(api);
+  constructor() {
+    super();
     this.states = transactionStates;
   }
 
@@ -69,46 +26,43 @@ export class TransactionManager extends TransactionEntity {
     const result = [];
     for (const item of transactions) {
       const { type, id } = this.extractDetails(item);
-      result.push(promisify(this.api[type].get, id));
+      result.push(this.promisify(this.api[type].get, id));
     }
     return await Promise.all(result);
   }
 
-  manageStates(transactions: any[]) {
+  sortByStates(transactions: any[]) {
+    const { success, error } = this.states;
     const resolved = [];
     const rejected = [];
     const pending = [];
 
     for (const item of transactions) {
       const { state } = this.extractDetails(item);
-      if (this.states.success.includes(state)) {
+
+      if (success.includes(state)) {
         resolved.push(item);
+        continue;
       }
 
-      if (this.states.error.includes(state)) {
+      if (error.includes(state)) {
         rejected.push(state);
+        continue;
       }
 
       pending.push(item);
     }
+
     return { resolved, rejected, pending };
   }
 
-  extractDetails(transaction: any) {
-    const hasId = Object(transaction).hasOwnProperty("id");
-
-    if (hasId) {
-      return {
-        type: "payment",
-        id: transaction.id,
-        state: transaction.state,
-      };
+  extractDetails(transaction: PaymentInstance | PayoutInstance) {
+    if ("id" in transaction) {
+      return new DepositDetails(transaction);
     }
 
-    return {
-      type: "payout",
-      id: transaction.batch_header?.payout_batch_id,
-      state: transaction.batch_header.batch_status,
-    };
+    if ("batch_header" in transaction) {
+      return new WithdrawDetails(transaction);
+    }
   }
 }

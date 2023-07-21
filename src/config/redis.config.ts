@@ -1,7 +1,4 @@
-import { RedisConfig } from "src/types/redis.types";
-
-
-export const config: RedisConfig = {
+export const config = {
   port: 6379,
   host: "redis",
   username: "admin", // needs Redis >= 6
