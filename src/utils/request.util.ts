@@ -1,5 +1,5 @@
 import paypal from "paypal-rest-sdk";
-import { paypalConfig } from "src/config/paypal.config";
+import { paypalConfig } from "src/confs/paypal.config";
 import { Initializable } from "src/types/common.types";
 import {
   ApprovalData,

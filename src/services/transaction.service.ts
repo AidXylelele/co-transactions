@@ -1,51 +1,48 @@
 import { Redis } from "ioredis";
 import { RedisUtil } from "src/utils/redis.utils";
-import { redisChannels } from "src/consts/redis.const";
 import { TransactionUtil } from "src/utils/transaction.utils";
-import { ChannelsCollection } from "src/types/redis.types";
+import { transactionChannels } from "src/consts/redis.const";
 import { DepositRequest, WithdrawRequest } from "src/types/paypal.types";
 
-export class TransactionService {
-  private channels: ChannelsCollection;
+export class TransactionService extends RedisUtil {
   private util: TransactionUtil;
-  private redis: RedisUtil;
 
   constructor(sub: Redis, pub: Redis, pool: Redis) {
-    this.channels = redisChannels.response;
+    super(sub, pub, pool, transactionChannels);
     this.util = new TransactionUtil();
-    this.redis = new RedisUtil(sub, pub, pool);
   }
 
   async createDeposit(message: string) {
-    const { email, transactions } = this.redis.parse(message);
+    const { email, transactions } = this.parse(message);
     const request = this.util.createRequest(DepositRequest, transactions);
     const payment = await this.util.createPayment(request);
     const href = this.util.getApprovalUrl(payment);
     const response = { data: { href } };
-    this.redis.publish(this.channels.deposit.approve, response);
-    await this.redis.inject(email, { pending: [payment] });
+    const channel = this.channels.responses.deposit.approve;
+    this.publish(channel, response);
+    await this.inject(email, { pending: [payment] });
   }
 
   async executeDeposit(message: string) {
-    const executionData = this.redis.parse(message);
+    const executionData = this.parse(message);
     await this.util.executePayment(executionData);
   }
 
   async createWithdraw(message: string) {
-    const { email, transactions } = this.redis.parse(message);
+    const { email, transactions } = this.parse(message);
     const request = this.util.createRequest(WithdrawRequest, transactions);
     const payout = await this.util.createPayout(request);
-    await this.redis.inject(email, { pending: [payout] });
+    await this.inject(email, { pending: [payout] });
   }
 
   async checkTransactions(cb: (arg: string) => Promise<void>) {
-    const records = await this.redis.getAll();
+    const records = await this.getAll();
     for (const email in records) {
       const account = records[email];
       const sortedTransactions = this.util.sortByStates(account.pending);
       const { resolved, rejected, pending } = sortedTransactions;
-      await this.redis.update(email, { pending });
-      await this.redis.inject(email, { resolved, rejected });
+      await this.update(email, { pending });
+      await this.inject(email, { resolved, rejected });
       await cb(email);
     }
   }

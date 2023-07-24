@@ -8,13 +8,13 @@ export type RedisConnection = {
   db: number;
 };
 
-export type ChannelsCollection = {
+export type RedisCollection = {
   [key: string]: Collection<string>;
 };
 
 export type RedisChannels = {
-  requests: ChannelsCollection;
-  response: ChannelsCollection;
+  requests: RedisCollection;
+  responses: RedisCollection;
 };
 
 export type Injection<T> = {

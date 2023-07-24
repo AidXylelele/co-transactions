@@ -1,25 +1,18 @@
-import { RedisChannels } from "src/types/redis.types";
+import { RedisCollection } from "src/types/redis.types";
 
-export const redisChannels: RedisChannels = {
-  requests: {
-    deposit: {
-      create: "req:deposit:create",
-      approve: "req:deposit:approve",
-      execute: "req:deposit:execute",
-    },
-    withdraw: {
-      create: "req:withdraw:create",
-    },
-    balance: {
-      check: "req:balance:check",
-    },
+export const transactionChannels: RedisCollection = {
+  deposit: {
+    create: ":deposit:create",
+    approve: ":deposit:approve",
+    execute: ":deposit:execute",
   },
-  response: {
-    deposit: {
-      approve: "res:deposit:approve",
-    },
-    balance: {
-      check: "res:balance:check",
-    },
+  withdraw: {
+    create: ":withdraw:create",
+  },
+};
+
+export const balanceChannels: RedisCollection = {
+  balance: {
+    check: ":balance:check",
   },
 };

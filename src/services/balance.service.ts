@@ -1,23 +1,23 @@
 import { Redis } from "ioredis";
 import { RedisUtil } from "src/utils/redis.utils";
 import { TransactionUtil } from "src/utils/transaction.utils";
+import { balanceChannels } from "src/consts/redis.const";
 
-export class BalanceService {
-  private redis: RedisUtil;
+export class BalanceService extends RedisUtil {
   private util: TransactionUtil;
 
   constructor(sub: Redis, pub: Redis, pool: Redis) {
+    super(sub, pub, pool, balanceChannels);
     this.util = new TransactionUtil();
-    this.redis = new RedisUtil(sub, pub, pool);
   }
 
-  async get(email: string) {
-    const user = await this.redis.get(email);
+  async getBalance(email: string) {
+    const user = await this.get(email);
     return user.balance;
   }
 
-  async update(email: string) {
-    const user = await this.redis.get(email);
+  async updateBalance(email: string) {
+    const user = await this.get(email);
     const transactions = user.resolved;
     let balance = user.balance;
 
@@ -35,6 +35,6 @@ export class BalanceService {
       }
     }
 
-    await this.redis.update(email, { balance });
+    await this.update(email, { balance });
   }
 }
